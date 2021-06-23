@@ -24,6 +24,20 @@ def assignment():
     board[int(floor(original_position[1] / 100))][int(floor(original_position[0] / 100))] = None
     board[int(floor(pieces[index].y / 100))][int(floor(pieces[index].x / 100))] = pieces[index]
 
+def attack():  #we could cut this down by using board
+    for i, piece in enumerate(pieces): 
+        if i != index and piece.x == pieces[index].x and piece.y == pieces[index].y:
+            if piece.colour == pieces[index].colour or piece.piece == "King":
+                [pieces[index].x, pieces[index].y] = original_position
+                return False
+            else:
+                assignment()
+                pieces.pop(i)
+                return True
+
+    assignment()
+    return True
+
 #arraysname (row * total columns) + coloumn
 def collision_detection():   #backwards....
 
@@ -52,20 +66,8 @@ def collision_detection():   #backwards....
             if board[int(floor((original_position[1] + y * i) / 100))][int(floor((original_position[0] + x * i) / 100))] != None and board[int(floor((original_position[1] + (y * i)) / 100))][int(floor((original_position[0] + (x * i))/ 100))] != pieces[index]:
                 [pieces[index].x, pieces[index].y] = original_position
                 return False
-            
-
-    for i, piece in enumerate(pieces): 
-        if i != index and piece.x == pieces[index].x and piece.y == pieces[index].y:
-            if piece.colour == pieces[index].colour or piece.piece == "King":
-                [pieces[index].x, pieces[index].y] = original_position
-                return False
-            else:
-                assignment()
-                pieces.pop(i)
-                return True
-
-    assignment()
-    return True
+    
+    return attack()
 
 def valid_move():  #moves through king...
 
@@ -98,10 +100,8 @@ def valid_move():  #moves through king...
             [pieces[index].x, pieces[index].y] = original_position
             return False
     elif pieces[index].piece == "Knight":
-        #make for-loop, with list containing moves made prior
-        if (pieces[index].x == (original_position[0] - 100) and pieces[index].y == original_position[1] - 200) or (pieces[index].x == (original_position[0] - 100) and pieces[index].y == original_position[1] + 200) or (pieces[index].x == (original_position[0] + 100) and pieces[index].y == original_position[1] + 200) or (pieces[index].x == (original_position[0] + 100) and pieces[index].y == original_position[1] - 200) or (pieces[index].x == (original_position[0] + 100) and pieces[index].y == original_position[1] - 200):
-            print("here")
-            return collision_detection()
+        if (abs(pieces[index].x - original_position[0]) == 100 and abs(pieces[index].y - original_position[1])) == 200 or (abs(pieces[index].x - original_position[0]) == 200 and abs(pieces[index].y - original_position[1]) == 100):
+            return attack()
         else:
             [pieces[index].x, pieces[index].y] = original_position
             return False
