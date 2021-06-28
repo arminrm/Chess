@@ -24,6 +24,19 @@ def assignment():
     board[int(floor(original_position[1] / 100))][int(floor(original_position[0] / 100))] = None
     board[int(floor(pieces[index].y / 100))][int(floor(pieces[index].x / 100))] = pieces[index]
 
+def rook_or_queen(temp):
+    if temp != None:
+        if (temp.piece == "Rook" or temp.piece == "Queen") and temp.colour != turn:
+            [pieces[index].x, pieces[index].y] = original_position
+            return True
+
+def bishop_or_queen(temp):
+    if temp != None:
+        if (temp.piece == "Bishop" or temp.piece == "Queen") and temp.colour != turn:
+            [pieces[index].x, pieces[index].y] = original_position
+            return True
+
+
 def attack():  #we could cut this down by using board
     for i, piece in enumerate(pieces): 
         if i != index and piece.x == pieces[index].x and piece.y == pieces[index].y:
@@ -38,95 +51,83 @@ def attack():  #we could cut this down by using board
     assignment()
     return True
 
+def direction_check(start_x, start_y, end_x, end_y, x_sign, y_sign):
+    if y_sign != 0 and x_sign == 0:
+        for row in range(start_y + (100 * y_sign), end_y, y_sign * 100):
+            if board[int(floor(row / 100))][int(floor(pieces[index].x / 100))] != None:
+                return board[int(floor(row / 100))][int(floor(pieces[index].x/ 100))]
+        return None
+    elif x_sign != 0 and y_sign == 0:
+        for col in range(start_x + (100 * x_sign), end_x, x_sign * 100):
+            if board[int(floor(pieces[index].y/ 100))][int(floor(col / 100))] != None:
+                return board[int(floor(pieces[index].y / 100))][int(floor(col / 100))]
+        return None
+    else:
+        for i in range(100, abs(end_x - start_x), 100):
+            if (start_y + (y_sign * i) >= 50 and start_y + (y_sign * i) <= 750) and (start_x + (x_sign * i) >= 50 and start_x + (x_sign * i) <= 750):
+                if board[int(floor((start_y + y_sign * i) / 100))][int(floor((start_x + x_sign * i) / 100))] != None:
+                    return board[int(floor((start_y + y_sign * i) / 100))][int(floor((start_x + x_sign * i) / 100))]
+        return None
+
+
 #arraysname (row * total columns) + coloumn
 def collision_detection():   #backwards....
 
     if original_position[1] > pieces[index].y:
         y = -1
-    else:
+    elif original_position[1] < pieces[index].y:
         y = 1
+    else:
+        y = 0
 
     if original_position[0] > pieces[index].x:
         x = -1
-    else:
+    elif original_position[0] < pieces[index].x:
         x = 1
-
-    if pieces[index].x == original_position[0]:  #change range in order to cut if-statement
-        for row in range(original_position[1], pieces[index].y, y * 100):
-            if board[int(floor(row / 100))][int(floor(original_position[0]/ 100))] != None and row != pieces[index].y and board[int(floor(row / 100))][int(floor(original_position[0]/ 100))] != pieces[index]:
-                [pieces[index].x, pieces[index].y] = original_position
-                return False
-    elif pieces[index].y == original_position[1]:
-        for col in range(original_position[0], pieces[index].x, x * 100):
-            if board[int(floor(original_position[1] / 100))][int(floor(col / 100))] != None and col != pieces[index].x and board[int(floor(original_position[1] / 100))][int(floor(col / 100))] != pieces[index]:
-                [pieces[index].x, pieces[index].y] = original_position
-                return False
     else:
-        for i in range(0, abs(pieces[index].x - original_position[0]), 100):
-            if board[int(floor((original_position[1] + y * i) / 100))][int(floor((original_position[0] + x * i) / 100))] != None and board[int(floor((original_position[1] + (y * i)) / 100))][int(floor((original_position[0] + (x * i))/ 100))] != pieces[index]:
-                [pieces[index].x, pieces[index].y] = original_position
-                return False
-    
+        x = 0
+
+    if direction_check(original_position[0], original_position[1], pieces[index].x, pieces[index].y, x, y) != None:
+        [pieces[index].x, pieces[index].y] = original_position
+        return False
+
     return attack()
-
-def check_horizontal(n, end):
-    for i in range(pieces[index].x + (n * 100), end + n , n * 100):
-        if board[int(floor(pieces[index].y / 100))][int(floor(i/ 100))] != None:
-            if (board[int(floor(pieces[index].y / 100))][int(floor(i / 100))].piece == "Rook" or board[int(floor(pieces[index].y / 100))][int(floor(i / 100))].piece == "Queen") and board[int(floor(pieces[index].y / 100))][int(floor(i / 100))].colour != turn:
-                print("lol")
-                [pieces[index].x, pieces[index].y] = original_position
-                return True
-            else:
-                return False
-
-    return False
-
-def check_vertical(n, end):
-    for i in range(pieces[index].y + (n * 100), end + n , n * 100):
-        if board[int(floor(i / 100))][int(floor(pieces[index].x / 100))] != None:
-            if (board[int(floor(i/ 100))][int(floor(pieces[index].x / 100))].piece == "Rook" or board[int(floor(i / 100))][int(floor(pieces[index].x / 100))].piece == "Queen") and board[int(floor(i / 100))][int(floor(pieces[index].x / 100))].colour != turn:
-                print("lol pt. 2")
-                [pieces[index].x, pieces[index].y] = original_position
-                return True
-            else:
-                return False
-
-    return False
-
-def check_diagonal(x, y, end_x, start_y):
-    for i in range(100, end_x + x, 100):
-        if start_y >= 50 and start_y <= 750:
-            print(int(floor((pieces[index].y + y * i) / 100)), int(floor((pieces[index].x + x * i) / 100)))
-            if board[int(floor((pieces[index].y + y * i) / 100))][int(floor((pieces[index].x + x * i) / 100))] != None:
-                if (board[int(floor((pieces[index].y + y * i) / 100))][int(floor((pieces[index].x + x * i) / 100))] == "Bishop" or board[int(floor((pieces[index].y + y * i) / 100))][int(floor((pieces[index].x + x * i) / 100))] == "Queen") and board[int(floor((pieces[index].y + y * i) / 100))][int(floor((pieces[index].x + x * i) / 100))].colour != turn:
-                    print("hey")
-                    [pieces[index].x, pieces[index].y] = original_position
-                    return True
-                else:
-                    return False
-
-            start_y = start_y + (y * 100)
-    
-    return False
 
 def valid_move_king():
 
-    if check_horizontal(-1, 50) or check_horizontal(1, 750):
-        return False
-
-    if check_vertical(-1, 50) or check_vertical(1, 750):
+    temp = direction_check(pieces[index].x, pieces[index].y, 49, pieces[index].y, -1, 0)
+    if rook_or_queen(temp):
         return False
     
-    if check_diagonal(1, 1, 750, pieces[index].y) or check_diagonal(-1, -1, 50, pieces[index].y) or check_diagonal(1, -1, 750, pieces[index].y) or check_diagonal(-1, 1, 50, pieces[index].y):
+    temp = direction_check(pieces[index].x, pieces[index].y, 751, pieces[index].y, 1, 0)
+    if rook_or_queen(temp):
+        return False
+    
+    temp = direction_check(pieces[index].x, pieces[index].y, pieces[index].x, 751, 0, 1)
+    if rook_or_queen(temp):
+        return False
+
+    temp = direction_check(pieces[index].x, pieces[index].y, pieces[index].x, 49, 0, -1)
+    if rook_or_queen(temp):
+        return False
+
+    temp = direction_check(pieces[index].x, pieces[index].y, 751, 751, 1, 1)
+    if bishop_or_queen(temp):
+        return False
+
+    temp = direction_check(pieces[index].x, pieces[index].y, 49, 751, -1, 1)
+    if bishop_or_queen(temp):
+        return False
+
+    temp = direction_check(pieces[index].x, pieces[index].y, 751, 49, 1, -1)
+    if bishop_or_queen(temp):
+        return False
+
+    temp = direction_check(pieces[index].x, pieces[index].y, 49, 49, -1, -1)
+    if bishop_or_queen(temp):
         return False
 
     return collision_detection()
-
-    #check right horizontal
-
-    #check up vertical
-
-    #check down vertical   
 
 def valid_move():  #moves through king...
 
@@ -150,6 +151,7 @@ def valid_move():  #moves through king...
         if pieces[index].x != original_position[0] and pieces[index].y != original_position[1] and abs(pieces[index].y - original_position[1]) == abs(pieces[index].x - original_position[0]):
             return collision_detection()
         else:
+            print("here")
             [pieces[index].x, pieces[index].y] = original_position
             return False 
     elif pieces[index].piece == "Queen": 
@@ -169,7 +171,6 @@ def valid_move():  #moves through king...
             #check for check-position
             return valid_move_king()
         else:
-            print("here")
             [pieces[index].x, pieces[index].y] = original_position
             return False
     return True
