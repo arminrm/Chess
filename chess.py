@@ -103,50 +103,34 @@ def valid_move_king():
     assignment()  #I could also put this as a condition...
 
     temp = direction_check(pieces[index].x, pieces[index].y, 49, pieces[index].y, -1, 0)
-    if temp != None:
-        print(temp.piece)
     if rook_or_queen(temp):
         return False
     
     temp = direction_check(pieces[index].x, pieces[index].y, 751, pieces[index].y, 1, 0)
-    if temp != None:
-        print(temp.piece)
     if rook_or_queen(temp):
         return False
     
     temp = direction_check(pieces[index].x, pieces[index].y, pieces[index].x, 751, 0, 1)
-    if temp != None:
-        print(temp.piece)
     if rook_or_queen(temp):
         return False
 
     temp = direction_check(pieces[index].x, pieces[index].y, pieces[index].x, 49, 0, -1)
-    if temp != None:
-        print(temp.piece)
     if rook_or_queen(temp):
         return False
 
     temp = direction_check(pieces[index].x, pieces[index].y, 751, 751, 1, 1)
-    if temp != None:
-        print(temp.piece)
     if bishop_or_queen(temp):
         return False
 
     temp = direction_check(pieces[index].x, pieces[index].y, 49, 751, -1, 1)
-    if temp != None:
-        print(temp.piece)
     if bishop_or_queen(temp):
         return False
 
     temp = direction_check(pieces[index].x, pieces[index].y, 751, 49, 1, -1)
-    if temp != None:
-        print(temp.piece)
     if bishop_or_queen(temp):
         return False
 
     temp = direction_check(pieces[index].x, pieces[index].y, 49, 49, -1, -1)
-    if temp != None:
-        print(temp.piece)
     if bishop_or_queen(temp):
         return False
 
