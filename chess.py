@@ -23,6 +23,7 @@ found = None
 
 king = []
 start = False
+check_piece = None
 
 def assignment():
 
@@ -41,17 +42,27 @@ def reassignment():  #this could be cut down if included as a condition
     board[int(floor(original_position[1] / 100))][int(floor(original_position[0] / 100))] = pieces[index]
 
 def rook_or_queen(temp, i):
+
+    global check_piece
+
     if temp != None:
         if (temp.piece == "Rook" or temp.piece == "Queen") and temp.colour != turn:
             if i == "valid":
                 reassignment()
+            elif i == "check":
+                check_piece = temp
             return True
 
 def bishop_or_queen(temp, i):
+
+    global check_piece
+
     if temp != None:
         if (temp.piece == "Bishop" or temp.piece == "Queen") and temp.colour != turn:
             if i == "valid":
                 reassignment()
+            elif i == "check":
+                check_piece = temp
             return True
 
 
@@ -119,9 +130,7 @@ def knight_check(x, y):  #could I shorten this??
                     return True
             
     return False
-
-        
-    
+  
 def direction_check(start_x, start_y, end_x, end_y, x_sign, y_sign):
     if y_sign != 0 and x_sign == 0:
         for row in range(start_y + (100 * y_sign), end_y, y_sign * 100):
@@ -135,33 +144,41 @@ def direction_check(start_x, start_y, end_x, end_y, x_sign, y_sign):
         return None
     else:
         for i in range(100, abs(end_x - start_x), 100):
-            if (start_y + (y_sign * i) >= 50 and start_y + (y_sign * i) <= 750) and (start_x + (x_sign * i) >= 50 and start_x + (x_sign * i) <= 750): #use "in range"
+            if start_y + (y_sign * i) in range(50, 751) and start_x + (x_sign * i) in range(50, 751): #use "in range"
                 if board[int(floor((start_y + y_sign * i) / 100))][int(floor((start_x + x_sign * i) / 100))] != None:
                     return board[int(floor((start_y + y_sign * i) / 100))][int(floor((start_x + x_sign * i) / 100))]
         return None
+
     
 #arraysname (row * total columns) + coloumn
-def collision_detection():   #backwards....
+def collision_detection(original_x, original_y, end_x, end_y, purpose):   #backwards....
 
-    if original_position[1] > pieces[index].y:
-        y = -1
-    elif original_position[1] < pieces[index].y:
-        y = 1
+    if pieces[index].piece != "Knight":
+        if original_y > end_y:
+            y = -1
+        elif original_y < end_y:
+            y = 1
+        else:
+            y = 0
+
+        if original_x > end_x:
+            x = -1
+        elif original_x < end_x:
+            x = 1
+        else:
+            x = 0
+
+        if direction_check(original_x, original_y, end_x, end_y, x, y) != None:
+            if purpose == "valid":
+                [pieces[index].x, pieces[index].y] = original_position
+                return False
+            else:
+                return False
+
+    if purpose == "valid":
+        return attack()
     else:
-        y = 0
-
-    if original_position[0] > pieces[index].x:
-        x = -1
-    elif original_position[0] < pieces[index].x:
-        x = 1
-    else:
-        x = 0
-
-    if direction_check(original_position[0], original_position[1], pieces[index].x, pieces[index].y, x, y) != None:
-        [pieces[index].x, pieces[index].y] = original_position
-        return False
-
-    return attack()
+        return True
 
 def check(i, j, purpose):
 
@@ -208,18 +225,20 @@ def check(i, j, purpose):
 
 def checkmate():
 
-    global king
+    global king, check_piece
 
     x = int(floor(king[0]/ 100))
     y = int(floor(king[1] / 100))
 
-    if check(0, 0, "checkmate") == False:  #means if there is a check ... #add directions.
+    check(0, 0, "check")
+
+    if check(0, 0, "check") == False:
         if x - 1 >= 0:    
             if (board[y][x - 1] != None and board[y][x - 1].colour != turn) or board[y][x - 1] == None:
                 if check(-100, 0, "checkmate"):
                     return False #no checkmate
 
-            if y - 1 >= 0:  #make into function....?
+            if y - 1 >= 0: 
                 if (board[y - 1][x] != None and board[y - 1][x].colour != turn) or board[y - 1][x] == None:
                     if check(0, -100, "checkmate"):
                         return False #no checkmate
@@ -260,12 +279,77 @@ def checkmate():
                     if check(100, 100, "checkmate"):
                         return False #no checkmate
 
+        if king[1] > check_piece.y:
+            y = -1
+        elif king[1] < check_piece.y:
+            y = 1
+        else:
+            y = 0
+
+        if king[0] > check_piece.x:
+            x = -1
+        elif king[0] < check_piece.x:
+            x = 1
+        else:
+            x = 0
+
+        for piece in pieces:
+            if piece.piece != "King" and  piece.colour == turn:
+                if y != 0 and x == 0:
+                   for row in range(king[1] + (100 * y), check_piece.y + y, y * 100):
+                        if check_move(piece.piece, piece.colour, piece.x, piece.y, king[0], row):
+                            if collision_detection(piece.x, piece.y, king[0], row, "checkmate"):
+                                return False          
+                elif x != 0 and y == 0:
+                    for col in range(king[0] + (100 * x), check_piece.x + x, x * 100):
+                        if check_move(piece.piece, piece.colour, piece.x, piece.y, col, king[1]):
+                            if collision_detection(piece.x, piece.y, col, king[1], "checkmate"):
+                                return False
+                else:
+                    for i in range(100, abs(check_piece.x - king[0]) + x, 100):
+                        if check_move(piece.piece, piece.colour, piece.x, piece.y, king[0] + x * i, king[1] + y * i):
+                            if collision_detection(piece.x, piece.y, king[0] + x * i, king[1] + y * i, "checkmate"):
+                                return False
         return True
     else:
         return False
-    
 
-def valid_move():  #moves through king...
+def check_move(piece, colour, original_x, original_y, new_x, new_y):  #moves through king...
+
+    global pieces, index, original_position
+
+    if piece == "Rook":
+        if new_x == original_x or new_y == original_y:
+            return True
+        else:
+            return False
+    elif piece == "Pawn":   #assumption potential error...
+        if ([new_x, new_y] == [original_x, original_y + 100] and colour == "WHITE") or ([new_x, new_y] == [original_x, original_y - 100] and colour == "BLACK"):
+            return True
+        else:
+            return False 
+    elif piece == "Bishop":
+        if new_x != original_x and new_y != original_y and abs(new_y - original_y) == abs(new_x - original_x):
+            return True
+        else:
+            return False 
+    elif piece == "Queen": 
+        if new_x == original_x or new_y == original_y or abs(new_y - original_y) == abs(new_x - original_x):
+            return True
+        else:
+            return False
+    elif piece == "Knight":
+        if (abs(new_x - original_x) == 100 and abs(new_y - original_y) == 200) or (abs(new_x - original_x) == 200 and abs(new_y - original_y) == 100):
+            return True
+        else:
+            return False
+    elif piece == "King":  #change condition...
+        if (abs(new_x - original_x) == 100 and new_y == original_y) or (abs(new_y - original_y) == 100 and new_x == original_x) or (abs(new_x - original_x) == 100 and abs(new_y - original_y) == 100):
+            return True
+        else:
+            return False
+    
+def valid_move():  #moves through king...  -- original
 
     global pieces, index, original_position, king
 
@@ -274,63 +358,15 @@ def valid_move():  #moves through king...
             king = [piece.x, piece.y]
             break
 
-    if pieces[index].piece == "Rook":
-        if pieces[index].x == original_position[0] or pieces[index].y == original_position[1]:
+    if check_move(pieces[index].piece, pieces[index].colour, original_position[0], original_position[1], pieces[index].x, pieces[index].y):
             assignment()
             if check(0, 0, "valid") == False:
                 return False
             else:
-                return collision_detection()
-        else:
-            [pieces[index].x, pieces[index].y] = original_position
-            return False
-    elif pieces[index].piece == "Pawn":
-        assignment()
-        if check(0, 0, "valid") == False:
-            return False
-        else:
-            return attack()
-    elif pieces[index].piece == "Bishop":
-        if pieces[index].x != original_position[0] and pieces[index].y != original_position[1] and abs(pieces[index].y - original_position[1]) == abs(pieces[index].x - original_position[0]):
-            assignment()
-            if check(0, 0, "valid") == False:
-                return False
-            else:
-                return collision_detection()
-        else:
-            [pieces[index].x, pieces[index].y] = original_position
-            return False 
-    elif pieces[index].piece == "Queen": 
-        if pieces[index].x == original_position[0] or pieces[index].y == original_position[1] or abs(pieces[index].y - original_position[1]) == abs(pieces[index].x - original_position[0]):
-            assignment()
-            if check(0, 0, "valid") == False:
-                return False
-            else:
-                return collision_detection()
-        else:
-            [pieces[index].x, pieces[index].y] = original_position
-            return False
-    elif pieces[index].piece == "Knight":
-        if (abs(pieces[index].x - original_position[0]) == 100 and abs(pieces[index].y - original_position[1]) == 200) or (abs(pieces[index].x - original_position[0]) == 200 and abs(pieces[index].y - original_position[1]) == 100):
-            assignment()
-            if check(0, 0, "valid") == False:
-                return False
-            else:
-                return attack()
-        else:
-            [pieces[index].x, pieces[index].y] = original_position
-            return False
-    elif pieces[index].piece == "King":  #change condition...
-        if (abs(pieces[index].x - original_position[0]) == 100 and pieces[index].y == original_position[1]) or (abs(pieces[index].y - original_position[1]) == 100 and pieces[index].x == original_position[0]) or (abs(pieces[index].x - original_position[0]) == 100 and abs(pieces[index].y - original_position[1]) == 100):
-            assignment()
-            if check(0, 0, "valid") == False:
-                return False
-            else:
-                return attack()
-        else:
-            [pieces[index].x, pieces[index].y] = original_position
-            return False
-    return True
+                return collision_detection(original_position[0], original_position[1], pieces[index].x, pieces[index].y, "valid")
+    else:
+        [pieces[index].x, pieces[index].y] = original_position
+        return False
 
 class chess_piece():   #camel-case, capitalized
 
