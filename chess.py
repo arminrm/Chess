@@ -21,7 +21,7 @@ original_position = []  #include in class
 original_piece = None
 found = None
 
-king = []
+king = None
 start = False
 check_piece = None
 
@@ -41,28 +41,34 @@ def reassignment():  #this could be cut down if included as a condition
     [pieces[index].x, pieces[index].y] = original_position
     board[int(floor(original_position[1] / 100))][int(floor(original_position[0] / 100))] = pieces[index]
 
-def rook_or_queen(temp, i):
+def rook_or_queen(temp, context, i, j):
 
     global check_piece
 
     if temp != None:
         if (temp.piece == "Rook" or temp.piece == "Queen") and temp.colour != turn:
-            if i == "valid":
+            if context == "valid":
                 reassignment()
-            elif i == "check":
+            elif context == "check":
                 check_piece = temp
+            elif context == "checkmate":
+                board[int(floor((king.y + j)/ 100))][int(floor((king.x + i)/ 100))] = original_piece
+                board[int(floor(king.y / 100))][int(floor(king.x / 100))] = king
             return True
 
-def bishop_or_queen(temp, i):
+def bishop_or_queen(temp, context, i, j):
 
     global check_piece
 
     if temp != None:
         if (temp.piece == "Bishop" or temp.piece == "Queen") and temp.colour != turn:
-            if i == "valid":
+            if context == "valid":
                 reassignment()
-            elif i == "check":
+            elif context == "check":
                 check_piece = temp
+            elif context == "checkmate":
+                board[int(floor((king.y + j)/ 100))][int(floor((king.x + i)/ 100))] = original_piece
+                board[int(floor(king.y / 100))][int(floor(king.x / 100))] = king
             return True
 
 
@@ -182,113 +188,132 @@ def collision_detection(original_x, original_y, end_x, end_y, purpose):   #backw
 
 def check(i, j, purpose):
 
-    global king
+    global king, original_piece
 
-    temp = direction_check(king[0] + i, king[1] + j, 49, king[1] + j, -1, 0)
-    if rook_or_queen(temp, purpose):
+    if purpose == "checkmate":
+        board[int(floor(king.y / 100))][int(floor(king.x / 100))] = None
+        original_piece = board[int(floor((king.y + j)/ 100))][int(floor((king.x + i)/ 100))]
+        board[int(floor((king.y + j) / 100))][int(floor((king.x + i) / 100))] = king
+
+    temp = direction_check(king.x + i, king.y + j, 49, king.y + j, -1, 0)
+    if rook_or_queen(temp, purpose, i, j):
         return False
             
-    temp = direction_check(king[0] + i, king[1] + j, 751, king[1] + j, 1, 0)
-    if rook_or_queen(temp, purpose):
+    temp = direction_check(king.x + i, king.y + j, 751, king.y + j, 1, 0)
+    if rook_or_queen(temp, purpose, i, j):
         return False
             
-    temp = direction_check(king[0] + i, king[1] + j, king[0] + i, 751, 0, 1)
-    if rook_or_queen(temp, purpose):
+    temp = direction_check(king.x + i, king.y + j, king.x + i, 751, 0, 1)
+    if rook_or_queen(temp, purpose,i, j):
         return False
 
-    temp = direction_check(king[0] + i, king[1] + j, king[0] + i, 49, 0, -1)
-    if rook_or_queen(temp, purpose):
+    temp = direction_check(king.x + i, king.y + j, king.x + i, 49, 0, -1)
+    if rook_or_queen(temp, purpose, i, j):
         return False
 
-    temp = direction_check(king[0] + i, king[1] + j, 751, 751, 1, 1)
-    if bishop_or_queen(temp, purpose):
+    temp = direction_check(king.x + i, king.y + j, 751, 751, 1, 1)
+    if bishop_or_queen(temp, purpose, i, j):
         return False
 
-    temp = direction_check(king[0]+ i, king[1] + j, 49, 751, -1, 1)
-    if bishop_or_queen(temp, purpose):
+    temp = direction_check(king.x + i, king.y + j, 49, 751, -1, 1)
+    if bishop_or_queen(temp, purpose, i, j):
         return False
 
-    temp = direction_check(king[0] + i, king[1] + j, 751, 49, 1, -1)
-    if bishop_or_queen(temp, purpose):
+    temp = direction_check(king.x + i, king.y + j, 751, 49, 1, -1)
+    if bishop_or_queen(temp, purpose, i, j):
         return False
 
-    temp = direction_check(king[0] + i, king[1] + j, 49, 49, -1, -1)
-    if bishop_or_queen(temp, purpose):
+    temp = direction_check(king.x + i, king.y + j, 49, 49, -1, -1)
+    if bishop_or_queen(temp, purpose, i, j):
         return False
 
-    if knight_check(king[0] + i, king[1] + j):
+    if knight_check(king.x + i, king.y + j):
         if purpose == "valid":
             reassignment()
+        elif purpose == "checkmate":
+            board[int(floor((king.y + j)/ 100))][int(floor((king.x + i)/ 100))] = original_piece
+            board[int(floor(king.y / 100))][int(floor(king.x / 100))] = king
         return False
 
+    if purpose == "checkmate":
+        board[int(floor((king.y + j)/ 100))][int(floor((king.x + i)/ 100))] = original_piece
+        board[int(floor(king.y / 100))][int(floor(king.x / 100))] = king
     return True
 
 def checkmate():
 
     global king, check_piece
 
-    x = int(floor(king[0]/ 100))
-    y = int(floor(king[1] / 100))
-
-    check(0, 0, "check")
+    x = int(floor(king.x / 100))
+    y = int(floor(king.y / 100))
 
     if check(0, 0, "check") == False:
         if x - 1 >= 0:    
             if (board[y][x - 1] != None and board[y][x - 1].colour != turn) or board[y][x - 1] == None:
                 if check(-100, 0, "checkmate"):
-                    return False #no checkmate
+                    print(1)
+                    return False 
 
             if y - 1 >= 0: 
                 if (board[y - 1][x] != None and board[y - 1][x].colour != turn) or board[y - 1][x] == None:
                     if check(0, -100, "checkmate"):
-                        return False #no checkmate
+                        print(2)
+                        return False
 
                 if (board[y - 1][x - 1] != None and board[y - 1][x - 1].colour != turn) or board[y - 1][x - 1] == None:
                     if check(-100, - 100, "checkmate"):
-                        return False #no checkmate
+                        print(3)
+                        return False
 
             if y + 1 <= 7:
                 if (board[y + 1][x] != None and board[y + 1][x].colour != turn) or board[y + 1][x] == None:
                     if check(0, 100, "checkmate"):
-                        return False #no checkmate
+                        print(4)
+                        return False
 
                 if (board[y + 1][x - 1] != None and board[y + 1][x - 1].colour != turn) or board[y + 1][x - 1] == None:
                     if check(-100, 100, "checkmate"):
-                        return False #no checkmate
+                        print(board[y + 1][x - 1].piece, board[y + 1][x - 1].colour)
+                        return False
 
         if x + 1 <= 7:
             if (board[y][x + 1] != None and board[y][x + 1].colour != turn) or board[y][x + 1] == None:
                 if check(100, 0, "checkmate"):
-                    return False #no checkmate
+                    print(5)
+                    return False
 
             if y - 1 >= 0:
                 if (board[y - 1][x] != None and board[y - 1][x].colour != turn) or board[y - 1][x] == None:
                     if check(0, -100, "checkmate"):
-                        return False #no checkmate
+                        print(6)
+                        return False
 
                 if (board[y - 1][x + 1] != None and board[y - 1][x + 1].colour != turn) or board[y - 1][x + 1] == None:
                     if check(100, -100,"checkmate"):
-                        return False #no checkmate
+                        print(7)
+                        return False
 
             if y + 1 <= 7:
                 if (board[y + 1][x] != None and board[y + 1][x].colour != turn) or board[y + 1][x] == None:
                     if check(0, 100, "checkmate"):
-                        return False #no checkmate
+                        print(8)
+                        return False 
 
                 if (board[y + 1][x + 1] != None and board[y + 1][x + 1] .colour != turn) or board[y + 1][x + 1]  == None:
                     if check(100, 100, "checkmate"):
-                        return False #no checkmate
+                        print(9)
+                        return False
 
-        if king[1] > check_piece.y:
+        if king.y > check_piece.y:
             y = -1
-        elif king[1] < check_piece.y:
+        elif king.y < check_piece.y:
             y = 1
         else:
             y = 0
 
-        if king[0] > check_piece.x:
+        if king.x > check_piece.x:
             x = -1
-        elif king[0] < check_piece.x:
+        elif king.x < check_piece.x:
             x = 1
         else:
             x = 0
@@ -296,19 +321,22 @@ def checkmate():
         for piece in pieces:
             if piece.piece != "King" and  piece.colour == turn:
                 if y != 0 and x == 0:
-                   for row in range(king[1] + (100 * y), check_piece.y + y, y * 100):
-                        if check_move(piece.piece, piece.colour, piece.x, piece.y, king[0], row):
-                            if collision_detection(piece.x, piece.y, king[0], row, "checkmate"):
+                   for row in range(king.y + (100 * y), check_piece.y + y, y * 100):
+                        if check_move(piece.piece, piece.colour, piece.x, piece.y, king.x, row):
+                            if collision_detection(piece.x, piece.y, king.x, row, "checkmate"):
+                                #print(piece.piece, piece.colour, piece.x, piece.y, 1, row)
                                 return False          
                 elif x != 0 and y == 0:
-                    for col in range(king[0] + (100 * x), check_piece.x + x, x * 100):
-                        if check_move(piece.piece, piece.colour, piece.x, piece.y, col, king[1]):
-                            if collision_detection(piece.x, piece.y, col, king[1], "checkmate"):
+                    for col in range(king.x + (100 * x), check_piece.x + x, x * 100):
+                        if check_move(piece.piece, piece.colour, piece.x, piece.y, col, king.y):
+                            if collision_detection(piece.x, piece.y, col, king.y, "checkmate"):
+                               #print(piece.piece, piece.colour, piece.x, piece.y, 2, col)
                                 return False
                 else:
-                    for i in range(100, abs(check_piece.x - king[0]) + x, 100):
-                        if check_move(piece.piece, piece.colour, piece.x, piece.y, king[0] + x * i, king[1] + y * i):
-                            if collision_detection(piece.x, piece.y, king[0] + x * i, king[1] + y * i, "checkmate"):
+                    for i in range(100, abs(check_piece.x - king.x) + x, 100):
+                        if check_move(piece.piece, piece.colour, piece.x, piece.y, king.x + x * i, king.y + y * i):
+                            if collision_detection(piece.x, piece.y, king.x + x * i, king.y + y * i, "checkmate"):
+                                #print(piece.piece, piece.colour, piece.x, piece.y, 3) 
                                 return False
         return True
     else:
@@ -343,7 +371,7 @@ def check_move(piece, colour, original_x, original_y, new_x, new_y):  #moves thr
             return True
         else:
             return False
-    elif piece == "King":  #change condition...
+    elif piece == "King":  #add castle condition here...
         if (abs(new_x - original_x) == 100 and new_y == original_y) or (abs(new_y - original_y) == 100 and new_x == original_x) or (abs(new_x - original_x) == 100 and abs(new_y - original_y) == 100):
             return True
         else:
@@ -355,7 +383,7 @@ def valid_move():  #moves through king...  -- original
 
     for piece in pieces:
         if piece.piece == "King" and piece.colour == turn:
-            king = [piece.x, piece.y]
+            king = piece
             break
 
     if check_move(pieces[index].piece, pieces[index].colour, original_position[0], original_position[1], pieces[index].x, pieces[index].y):
@@ -457,7 +485,7 @@ class MyGame(arcade.Window):
             
     def on_mouse_release(self, x, y, button, key_modifiers):
         
-        global pieces, index, valid_choice, turn, found, start, king
+        global pieces, index, valid_choice, turn, found, start, king, king_object
 
         found = False
         
@@ -483,7 +511,7 @@ class MyGame(arcade.Window):
 
                 for piece in pieces:
                     if piece.piece == "King" and piece.colour == turn:
-                        king = [piece.x, piece.y]
+                        king = piece
                         break
 
                 start = checkmate()
