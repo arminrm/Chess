@@ -1,5 +1,6 @@
 from math import floor
 import arcade
+import os, os.path
 #changes to the check function (assignment and final portion); changes to valid move function
 
 SCREEN_HEIGHT = 800
@@ -24,6 +25,13 @@ found = None
 king = None
 start = False
 check_piece = None
+king_moved = {"WHITE": 0, "BLACK": 0}
+rook_moved = {"WHITE": 0, "BLACK": 0}
+castle = False
+
+pawn_straight = None
+
+
 
 def assignment():
 
@@ -58,7 +66,7 @@ def rook_or_queen(temp, context, i, j):
 
 def bishop_or_queen(temp, context, i, j):
 
-    global check_piece
+    global check_piece, king_moved
 
     if temp != None:
         if (temp.piece == "Bishop" or temp.piece == "Queen") and temp.colour != turn:
@@ -71,17 +79,58 @@ def bishop_or_queen(temp, context, i, j):
                 board[int(floor(king.y / 100))][int(floor(king.x / 100))] = king
             return True
 
+def pawn_check(temp, context, i, j):
+
+    global check_piece
+
+    if temp != None and temp.piece == "Pawn" and temp.colour != turn:
+        if abs(king.x + i - temp.x) == 100 and abs(king.y + j - temp.y) == 100:
+            if context == "valid":
+                reassignment()
+            elif context == "check":
+                check_piece = temp
+            elif context == "checkmate":
+                board[int(floor((king.y + j)/ 100))][int(floor((king.x + i)/ 100))] = original_piece
+                board[int(floor(king.y / 100))][int(floor(king.x / 100))] = king
+            return True
+    
+def move_rook(): 
+    for piece in pieces:
+        if piece.piece == "Rook" and piece.colour == turn and piece.x == 750:
+            board[int(floor(piece.y / 100))][int(floor(piece.x / 100))] = None
+            board[int(floor(pieces[index].y/ 100))][5] = piece
+            [piece.x, piece.y] = [550, pieces[index].y]
+
+def moved_piece():
+
+    global castle
+
+    if pieces[index].piece == "King":
+        king_moved[turn] = 1
+    elif pieces[index].piece == "Rook":
+        rook_moved[turn] = 1
+
+    if castle:
+        move_rook()
 
 def attack():  #might have to include assignment function
+
+    global castle, pawn_straight
     for i, piece in enumerate(pieces): 
         if i != index and piece.x == pieces[index].x and piece.y == pieces[index].y:
             if piece.colour == pieces[index].colour or piece.piece == "King":
                 reassignment()
                 return False
             else:
+                moved_piece()  #what if you are attacking a piece....
+                if pieces[index].piece == "Pawn":
+                    if pawn_straight:
+                        reassignment()
+                        return False
                 pieces.pop(i)
                 return True
 
+    moved_piece()
     return True
 
 def knight_check(x, y):  #could I shorten this??
@@ -177,13 +226,13 @@ def collision_detection(original_x, original_y, end_x, end_y, purpose):   #backw
         if direction_check(original_x, original_y, end_x, end_y, x, y) != None:
             if purpose == "valid":
                 [pieces[index].x, pieces[index].y] = original_position
-                return False
-            else:
-                return False
+            return False
 
     if purpose == "valid":
         return attack()
     else:
+        if pawn_straight and board[int(floor(end_y / 100))][int(floor(end_x / 100))] != None:
+            return False
         return True
 
 def check(i, j, purpose):
@@ -195,7 +244,7 @@ def check(i, j, purpose):
         original_piece = board[int(floor((king.y + j)/ 100))][int(floor((king.x + i)/ 100))]
         board[int(floor((king.y + j) / 100))][int(floor((king.x + i) / 100))] = king
 
-    temp = direction_check(king.x + i, king.y + j, 49, king.y + j, -1, 0)
+    temp = direction_check(king.x + i, king.y + j, 49, king.y + j, -1, 0) #it is because it checks this first lol
     if rook_or_queen(temp, purpose, i, j):
         return False
             
@@ -212,18 +261,32 @@ def check(i, j, purpose):
         return False
 
     temp = direction_check(king.x + i, king.y + j, 751, 751, 1, 1)
+    if turn == "WHITE" and pawn_check(temp, purpose, i, j):
+        return False
     if bishop_or_queen(temp, purpose, i, j):
         return False
 
     temp = direction_check(king.x + i, king.y + j, 49, 751, -1, 1)
+    #if temp != None:
+        #print(temp.piece, temp.x, temp.y)
+    if turn == "WHITE" and pawn_check(temp, purpose, i, j):
+        return False
     if bishop_or_queen(temp, purpose, i, j):
         return False
 
     temp = direction_check(king.x + i, king.y + j, 751, 49, 1, -1)
+    #if temp != None:
+        #print(temp.piece, temp.x, temp.y)
+    if turn == "BLACK" and pawn_check(temp, purpose, i, j):
+        return False
     if bishop_or_queen(temp, purpose, i, j):
         return False
 
     temp = direction_check(king.x + i, king.y + j, 49, 49, -1, -1)
+    if temp != None:
+        print(temp.piece, temp.x, temp.y, turn, temp.colour)
+    if turn == "BLACK" and pawn_check(temp, purpose, i, j):
+        return False
     if bishop_or_queen(temp, purpose, i, j):
         return False
 
@@ -273,7 +336,6 @@ def checkmate():
 
                 if (board[y + 1][x - 1] != None and board[y + 1][x - 1].colour != turn) or board[y + 1][x - 1] == None:
                     if check(-100, 100, "checkmate"):
-                        print(board[y + 1][x - 1].piece, board[y + 1][x - 1].colour)
                         return False
 
         if x + 1 <= 7:
@@ -324,19 +386,18 @@ def checkmate():
                    for row in range(king.y + (100 * y), check_piece.y + y, y * 100):
                         if check_move(piece.piece, piece.colour, piece.x, piece.y, king.x, row):
                             if collision_detection(piece.x, piece.y, king.x, row, "checkmate"):
-                                #print(piece.piece, piece.colour, piece.x, piece.y, 1, row)
-                                return False          
+                                print(piece.piece, piece.colour, piece.x, piece.y, 1, row)     
                 elif x != 0 and y == 0:
                     for col in range(king.x + (100 * x), check_piece.x + x, x * 100):
                         if check_move(piece.piece, piece.colour, piece.x, piece.y, col, king.y):
                             if collision_detection(piece.x, piece.y, col, king.y, "checkmate"):
-                               #print(piece.piece, piece.colour, piece.x, piece.y, 2, col)
+                                print(piece.piece, piece.colour, piece.x, piece.y, 2, col)
                                 return False
                 else:
                     for i in range(100, abs(check_piece.x - king.x) + x, 100):
                         if check_move(piece.piece, piece.colour, piece.x, piece.y, king.x + x * i, king.y + y * i):
                             if collision_detection(piece.x, piece.y, king.x + x * i, king.y + y * i, "checkmate"):
-                                #print(piece.piece, piece.colour, piece.x, piece.y, 3) 
+                                print(piece.piece, piece.colour, piece.x, piece.y, 3, king.x + x * i, king.y + y * i) 
                                 return False
         return True
     else:
@@ -344,18 +405,40 @@ def checkmate():
 
 def check_move(piece, colour, original_x, original_y, new_x, new_y):  #moves through king...
 
-    global pieces, index, original_position
+    global pieces, index, original_position, castle, pawn_straight
 
     if piece == "Rook":
         if new_x == original_x or new_y == original_y:
             return True
         else:
             return False
-    elif piece == "Pawn":   #assumption potential error...
-        if ([new_x, new_y] == [original_x, original_y + 100] and colour == "WHITE") or ([new_x, new_y] == [original_x, original_y - 100] and colour == "BLACK"):
-            return True
-        else:
-            return False 
+    elif piece == "Pawn":   #I could cut this whole section down to one function.....
+        if colour == "WHITE":
+            if [new_x, new_y] == [original_x, original_y + 100]:
+                pawn_straight = True
+                return True
+            elif [new_x, new_y] == [original_x, original_y + 200]:
+                if original_y == 150:
+                    pawn_straight = True
+                    return True 
+            elif [new_x, new_y] == [original_x + 100, original_y + 100] or [new_x, new_y] == [original_x - 100, original_y + 100]:
+                if board[int(floor(new_y/100))][int(floor(new_x/100))] != None and board[int(floor(new_y/100))][int(floor(new_x/100))].colour != turn:
+                    pawn_straight = False
+                    return True
+            return False
+        elif colour == "BLACK":
+            if [new_x, new_y] == [original_x, original_y - 100]:
+                pawn_straight = True
+                return True
+            elif [new_x, new_y] == [original_x, original_y - 200]:
+                if original_y == 650:
+                    pawn_straight = True
+                    return True 
+            elif [new_x, new_y] == [original_x + 100, original_y - 100] or [new_x, new_y] == [original_x - 100, original_y - 100]:
+                if board[int(floor(new_y/100))][int(floor(new_x/100))] != None and board[int(floor(new_y/100))][int(floor(new_x/100))].colour != turn:
+                    pawn_straight = False
+                    return True
+            return False
     elif piece == "Bishop":
         if new_x != original_x and new_y != original_y and abs(new_y - original_y) == abs(new_x - original_x):
             return True
@@ -374,9 +457,13 @@ def check_move(piece, colour, original_x, original_y, new_x, new_y):  #moves thr
     elif piece == "King":  #add castle condition here...
         if (abs(new_x - original_x) == 100 and new_y == original_y) or (abs(new_y - original_y) == 100 and new_x == original_x) or (abs(new_x - original_x) == 100 and abs(new_y - original_y) == 100):
             return True
+        elif king_moved[turn] == 0 and rook_moved[turn] == 0:
+            if new_x == original_x + 200 and new_y == original_y:
+                castle = True
+                return True 
         else:
             return False
-    
+                
 def valid_move():  #moves through king...  -- original
 
     global pieces, index, original_position, king
@@ -485,7 +572,7 @@ class MyGame(arcade.Window):
             
     def on_mouse_release(self, x, y, button, key_modifiers):
         
-        global pieces, index, valid_choice, turn, found, start, king, king_object
+        global pieces, index, valid_choice, turn, found, start, king, castle, pawn_straight
 
         found = False
         
@@ -514,9 +601,11 @@ class MyGame(arcade.Window):
                         king = piece
                         break
 
+                pawn_straight = False
                 start = checkmate()
 
         valid_choice = False
+        castle = False
 
 def main():
     """ Main method """
