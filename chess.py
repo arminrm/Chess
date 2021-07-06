@@ -1,7 +1,6 @@
 from math import floor
 import arcade
 import os, os.path
-#changes to the check function (assignment and final portion); changes to valid move function
 
 SCREEN_HEIGHT = 800
 SCREEN_WIDTH = 800
@@ -31,7 +30,8 @@ castle = False
 
 pawn_straight = None
 
-
+img_paths = [f"Project\\images\\{piece}" for piece in os.listdir("C:\\Users\\armin\\Downloads\\Project\\Project\\images")]
+piece_imgs = {image: arcade.load_texture(image) for image in img_paths}
 
 def assignment():
 
@@ -386,7 +386,8 @@ def checkmate():
                    for row in range(king.y + (100 * y), check_piece.y + y, y * 100):
                         if check_move(piece.piece, piece.colour, piece.x, piece.y, king.x, row):
                             if collision_detection(piece.x, piece.y, king.x, row, "checkmate"):
-                                print(piece.piece, piece.colour, piece.x, piece.y, 1, row)     
+                                print(piece.piece, piece.colour, piece.x, piece.y, 1, row) 
+                                return False    
                 elif x != 0 and y == 0:
                     for col in range(king.x + (100 * x), check_piece.x + x, x * 100):
                         if check_move(piece.piece, piece.colour, piece.x, piece.y, col, king.y):
@@ -486,6 +487,7 @@ def valid_move():  #moves through king...  -- original
 class chess_piece():   #camel-case, capitalized
 
     def __init__(self, piece, colour, x, y):
+        self.image = None
         self.piece = piece
         self.colour = colour
         self.x = x
@@ -499,6 +501,9 @@ class chess_piece():   #camel-case, capitalized
          board[7].append(chess_piece(name, "BLACK", (100 * x) + 50, 750))
          board[1].append(chess_piece("Pawn", "WHITE", (100 * x) + 50, 150))
          board[6].append(chess_piece("Pawn", "BLACK", (100 * x) + 50, 650))
+
+         for piece in pieces:
+             piece.image = piece_imgs[f"Project\\images\\{piece.colour}_{piece.piece}.png"]
 
 class MyGame(arcade.Window):
 
@@ -525,7 +530,7 @@ class MyGame(arcade.Window):
             y_positions.append(y + 50)
             for x in range(0 + z, 701 + z, 100):
                 if x % 200 == 0:
-                    arcade.draw_xywh_rectangle_filled(x - z, y, 100, 100, arcade.color.BLACK)
+                    arcade.draw_xywh_rectangle_filled(x - z, y, 100, 100, arcade.color.AUBURN)
                 else:
                     arcade.draw_xywh_rectangle_filled(x - z, y, 100, 100, arcade.color.WHITE)
                 if y == 0:
@@ -535,19 +540,9 @@ class MyGame(arcade.Window):
         #print pieces
         for piece in pieces:
             if piece.colour == 'WHITE':
-                arcade.draw_text(piece.piece, piece.x, piece.y, arcade.color.BLUE)
+                arcade.draw_texture_rectangle(piece.x, piece.y, 70, 70, piece.image)
             elif piece.colour == 'BLACK':
-                arcade.draw_text(piece.piece, piece.x, piece.y, arcade.color.RED)
-
-    #def on_update(self, delta_time):
-
-
-    #def on_key_press(self, key, key_modifiers):
-        
-        #pass
-
-    #def on_key_release(self, key, key_modifiers):
-
+                arcade.draw_texture_rectangle(piece.x, piece.y, 70, 70, piece.image)
 
     def on_mouse_motion(self, x, y, delta_x, delta_y):
 
@@ -603,6 +598,7 @@ class MyGame(arcade.Window):
 
                 pawn_straight = False
                 start = checkmate()
+                print(start)
 
         valid_choice = False
         castle = False
