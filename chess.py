@@ -571,7 +571,6 @@ class MyGame(arcade.Window):
 
                 pawn_straight = False
                 start = checkmate()
-                print(start)
 
         valid_choice = False
         castle = False
