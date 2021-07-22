@@ -460,7 +460,7 @@ def valid_move():
         [pieces[index].x, pieces[index].y] = original_position
         return False
 
-class chess_piece():
+class ChessPiece():
 
     def __init__(self, piece, colour, x, y):
         self.image = None
