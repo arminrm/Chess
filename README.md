@@ -5,7 +5,9 @@ A two-player Chess game implemented using Python Arcade library.
 <img src="https://img.shields.io/badge/-Python-blue" /> <img src="https://img.shields.io/badge/-Arcade-green" /> 
 
 Illegal Move Detection:
-<img src="https://user-images.githubusercontent.com/68967290/147420327-05c5b151-0e15-408c-9db2-bfa9784fe539.gif" width="400" height="400" />
+<div>
+  <img src="https://user-images.githubusercontent.com/68967290/147420327-05c5b151-0e15-408c-9db2-bfa9784fe539.gif" width="400" height="400" />
+<div/>
 
 Check and Checkmate Detection:
 <p float="left">
