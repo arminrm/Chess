@@ -12,5 +12,5 @@ Illegal Move Detection:
 Check and Checkmate Detection:
 <p float="left">
   <img src="https://user-images.githubusercontent.com/68967290/147420149-8c8063f9-e4ff-4a70-8f65-f84629b7878a.gif" width="400" height="400" />
-  <img src="https://user-images.githubusercontent.com/68967290/147420221-dbfd08ae-cc55-4922-b069-df20c37b7f1b.gif" width="400" height="400" style= "margin-left: 12px"/>
+  <img src="https://user-images.githubusercontent.com/68967290/147420221-dbfd08ae-cc55-4922-b069-df20c37b7f1b.gif" width="400" height="400" style= "margin: 12px"/>
 </p>
